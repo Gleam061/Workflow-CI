@@ -1,5 +1,5 @@
-name: heart-disease-mlflow-project
-
+name: MyProject
+virtualenv: python_env.yaml  
 entry_points:
   main:
     command: "python modelling.py"

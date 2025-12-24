@@ -1,28 +1,31 @@
-name: MLflow CI Training
+name: Retrain ML Model
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  train-model:
+  retrain:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python (tanpa conda)
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: "3.10"
 
-      - name: Install MLflow
+      - name: Install dependencies
         run: |
-          pip install mlflow
+          python -m pip install --upgrade pip
+          pip install mlflow pandas numpy scikit-learn
 
       - name: Run MLflow Project
         run: |
           cd MLProject
-          mlflow run .
+          echo "Running MLflow project retraining..."
+          mlflow run . --env-manager=local -P data_path=heart_preprocessed.csv

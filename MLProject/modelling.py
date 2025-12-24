@@ -1,42 +1,42 @@
-import pandas as pd
 import mlflow
 import mlflow.sklearn
-
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import argparse
+import os
 
-# =========================
-# Load Dataset
-# =========================
-df = pd.read_csv("heart_preprocessed.csv")
+# --- Ambil argumen dari MLflow Project ---
+parser = argparse.ArgumentParser()
+parser.add_argument("--data_path", type=str, default="heart_preprocessed.csv")
+args = parser.parse_args()
 
-X = df.drop(columns="target")
+print(f"Loading dataset from: {args.data_path}")
+
+# --- Load dataset ---
+data_path = os.path.join(os.path.dirname(__file__), args.data_path)
+df = pd.read_csv(data_path)
+
+X = df.drop("target", axis=1)
 y = df["target"]
 
-# =========================
-# Split Data
-# =========================
+# --- Split data ---
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# =========================
-# MLflow Setup
-# =========================
-mlflow.set_experiment("CI-Heart-Disease")
-mlflow.sklearn.autolog()
+# --- Train model ---
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
 
-# =========================
-# Train Model
-# =========================
+# --- Evaluate ---
+score = model.score(X_test, y_test)
+print(f"✅ Model Accuracy: {score}")
+
+# --- Log ke MLflow ---
 with mlflow.start_run():
-    model = LogisticRegression(max_iter=1000)
-    model.fit(X_train, y_train)
+    mlflow.log_param("data_path", args.data_path)
+    mlflow.log_metric("accuracy", score)
+    mlflow.sklearn.log_model(model, "model")
 
-    y_pred = model.predict(X_test)
-
-    mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
-    mlflow.log_metric("precision", precision_score(y_test, y_pred))
-    mlflow.log_metric("recall", recall_score(y_test, y_pred))
-    mlflow.log_metric("f1_score", f1_score(y_test, y_pred))
+print("Training complete and model logged to MLflow.")
